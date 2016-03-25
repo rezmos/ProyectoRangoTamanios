@@ -1,60 +1,76 @@
-import java.sql.*;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Map;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-
+import com.greatideas.app.model.RangoTamanio;
+import java.util.LinkedList;
 import static spark.Spark.*;
-import spark.template.freemarker.FreeMarkerEngine;
-import spark.ModelAndView;
 import static spark.Spark.get;
-
-import com.heroku.sdk.jdbc.DatabaseUrl;
+import util.Archivo;
 
 public class Main {
+    
+ 
+    /**
+     * #Method
+     * 
+     * Este m?todo es el m?todo principal de la aplicacion
+     * 
+     * @param args 
+     * @author Claudia Marcela Alvarez Ramos
+     * @return B0
+    
+     */
+    
+   public static void main(String[] args) {
 
-  public static void main(String[] args) {
+        port(Integer.valueOf(System.getenv("PORT")));
+        staticFileLocation("/public");
 
-    port(Integer.valueOf(System.getenv("PORT")));
-    staticFileLocation("/public");
-
-    get("/hello", (req, res) -> "Hello World");
-
-    get("/", (request, response) -> {
-            Map<String, Object> attributes = new HashMap<>();
-            attributes.put("message", "Hello World!");
-
-            return new ModelAndView(attributes, "index.ftl");
-        }, new FreeMarkerEngine());
-
-    get("/db", (req, res) -> {
-      Connection connection = null;
-      Map<String, Object> attributes = new HashMap<>();
-      try {
-        connection = DatabaseUrl.extract().getConnection();
-
-        Statement stmt = connection.createStatement();
-        stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ticks (tick timestamp)");
-        stmt.executeUpdate("INSERT INTO ticks VALUES (now())");
-        ResultSet rs = stmt.executeQuery("SELECT tick FROM ticks");
-
-        ArrayList<String> output = new ArrayList<String>();
-        while (rs.next()) {
-          output.add( "Read from DB: " + rs.getTimestamp("tick"));
-        }
-
-        attributes.put("results", output);
-        return new ModelAndView(attributes, "db.ftl");
-      } catch (Exception e) {
-        attributes.put("message", "There was an error: " + e);
-        return new ModelAndView(attributes, "error.ftl");
-      } finally {
-        if (connection != null) try{connection.close();} catch(SQLException e){}
-      }
-    }, new FreeMarkerEngine());
-
-  }
-
+        get("/rango-tamanio", (req, res) -> {
+ 
+    String retorno;
+            RangoTamanio caso = null;
+            LinkedList listaDeDatos = Archivo.leerArchivo();
+            if(listaDeDatos!=null && listaDeDatos.size()>0){ 
+               caso = new RangoTamanio((LinkedList<Double>)listaDeDatos.get(0));
+             }
+            retorno = "<!DOCTYPE html>"
+                    + "<html>"
+                    + "<head>"
+                    + "<style>"
+                    + "table, th, td {"
+                    + "border: 1px solid black;"
+                    + "border-collapse: collapse;"
+                    + "}"
+                    + "th, td {"
+                    + "padding: 5px;"
+                    + "text-align: left;"
+                    + "}"
+                    + "table#t01 {"
+                    + "width: 100%;    "
+                    + "background-color: #A9BCF5;"
+                    + "}"
+                    + "</style>"
+                    + "</head>"
+                    + "<body>"
+                    + "<table id=\"t01\">"
+                    + "<tbody>"
+                    + "<tr>"
+                    + "<th>VS</th>"
+                    + "<th>S</th>"
+                    + "<th>M</th>"
+                    + "<th>L</th>"
+                    + "<th>VL</th>"
+                    + "</tr>";
+                retorno += "<tr>"
+                        + "<td>" + caso.getVS()+ "</td>"
+                        + "<td>" + caso.getS()+ "</td>"
+                        + "<td>" + caso.getM() + "</td>"
+                        + "<td>" + caso.getL() + "</td>"
+                        + "<td>" + caso.getVL() + "</td>"
+                        + "</tr>";
+            retorno += "</tbody>"
+                    + "</table>"
+                    + "</body>"
+                    + "</html>";
+            return retorno;
+        });
+    }
 }
